@@ -1,0 +1,60 @@
+# Kubernetes version = 1.8
+apiVersion: apps/v1beta2
+# Kubernetes version >= 1.9
+#apiVersion: apps/v1
+
+kind: Deployment
+metadata:
+  name: telegraf
+  namespace: cs-se
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: APPLICATION
+  template:
+    metadata:
+      labels:
+        app: APPLICATION
+    spec:
+      containers:
+      - name: MAIN_CONTAINER_DEFINITION_HERE
+        image: REPLACE_ME:LATEST
+      - name: telegraf
+        image: cs-se/telegraf
+        ports:
+        - name: udp-statsd
+          containerPort: 8125
+        - name: udp-8092
+          containerPort: 8092
+        - name: tcp-8094
+          containerPort: 8094
+        env:
+        - name: WAVEFRONT_PROXY
+          value: wavefront-proxy
+        - name: INTERVAL
+          value: 60s
+        - name: NODE_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.hostname
+        resources:
+          requests:
+            memory: 30Mi
+            cpu: 100m
+          limits:
+            memory: 50Mi
+            cpu: 200m
+        volumeMounts:
+        - name: telegraf-d
+          mountPath: /etc/telegraf/telegraf.d            
+      volumes:
+      - name: telegraf-d
+        projected:
+          sources:
+          - configMap:
+              name: telegraf-APPLICATION-config
